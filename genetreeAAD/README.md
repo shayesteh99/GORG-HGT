@@ -22,3 +22,5 @@
 * [plot.R](plot.R): code to plot the data above (Figures 2B and S1)
 
 * [multiplicities.txt](multiplicities.txt): The multiplicity of species per gene family tree 
+
+* AAD-genomes.txt: List of genomes with AAD values computed and used
