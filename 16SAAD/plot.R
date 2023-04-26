@@ -8,6 +8,12 @@ d = read.table("combined_data.txt",header=T)
 fitd16=chngptm(formula.1=qdistAstral16-qdist16~1, formula.2=~pdist, data=d , type="stegmented",
                family="gaussian")
 
+
+
+t.test(with(d[d$pdist<fitd16$chngpt,],qdistAstral16-qdist16))
+
+t.test(with(d[d$pdist>=fitd16$chngpt,],qdistAstral16-qdist16))
+     
 ggplot(d,aes(x=pdist,y=qdistAstral16-qdist16)) +
   geom_point(alpha=1/3,color="blue") + 
   geom_hline(yintercept = 0,linetype=2) + 
