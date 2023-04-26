@@ -15,7 +15,7 @@
 * `RAxML.T16S-SINA-1000-bootcutoff_MVrooted_pruned`, 
   `RAxML.T23S-SINA-1000-bootcutoff_MVrooted_pruned`, 
   `aad_tree_pruned.nwk`, 
-  `astral_pruned.tre`: pruned version of trees above; Restrict the leafset of all trees (astral, S16, S23, aad_tree) and to their intersection
+  `astral_pruned.tre`: pruned version of trees above; restrict the leafset of all trees (astral, S16, S23, aad_tree) to their intersection
 
 * [aad_binning.py](aad_binning.py): the sampling strategy using the hierarchical single linkage clustering. Creates these files:
 
