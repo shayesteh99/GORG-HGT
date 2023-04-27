@@ -6,9 +6,12 @@ This is the simulation procedure to evaluate the accuracy of GND and AAD estimat
 
 ### Evolutionary model and simulation procedure: 
 To generate a mock genome X' that has AAD(X,X') = p, we do the following steps
-  * 1. use a gamma distribution (alpha = beta = 22) to draw the relative rate for each gene. 
-  * 2. sample without replacement nmus = p\*L amino acids in X, where L is the length of X. Each amino acid in X is selected with a probability determined by the rate of the gene it belongs to. Mutate these amino acids using the BLOSUM62 model to obtain X'.  
-  * 3. back translate X' from amino acids to nucleotides. 
+  1. use a gamma distribution (alpha = beta = 22) to draw the relative rate for each gene. 
+  
+  2. sample without replacement nmus = p\*L amino acids in X, where L is the length of X. Each amino acid in X is selected with a probability determined by the rate of the gene it belongs to. Mutate these amino acids using the BLOSUM62 model to obtain X'.  
+  
+  3. back translate X' from amino acids to nucleotides. 
+  
 We vary p to create a set of X' with different distances to X.
   
 ### Side notes  
