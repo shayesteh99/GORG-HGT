@@ -15,6 +15,9 @@ To generate a mock genome X' that has AAD(X,X') = p, we do the following steps
 We vary p to create a set of X' with different distances to X.
 
 ### Simulated data
+  * We simulated a set of 35 mock genomes mutated from AG-359-G18. 
+  * The simulated genomes are stored in ```AG-359-G18_mutated_alpha0022.tar.gz```, which contains 35 folders: ```mutated_a22_aad*```. These folders contain the 35 simulated mock genomes that have AAD to AG-359-G18 varying from 0.01 to 0.69 (step size is 0.02).
+  * Inside each folder, there are 3 files: (1) ```gnd_aad.txt``` - the GND and AAD distance of this mock genome to AG-359-G18. (2) ```mutated.fasta``` - the simulated mock genome in DNA, and (3) ```mutated_genes.faa``` - the simulated mock genome in amino acid.
 
 ### Side notes  
   * Back translation: when there are multiple codons for an amino acid, if there is a codon that is identical to the original genome, we choose it; otherwise, we randomly select a codon with weight proportional to 4-d where d is its Hamming distance to the original genome. 
