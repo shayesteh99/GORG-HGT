@@ -13,7 +13,9 @@ To generate a mock genome X' that has AAD(X,X') = p, we do the following steps
   3. back translate X' from amino acids to nucleotides. 
   
 We vary p to create a set of X' with different distances to X.
-  
+
+### Simulated data
+
 ### Side notes  
   * Back translation: when there are multiple codons for an amino acid, if there is a codon that is identical to the original genome, we choose it; otherwise, we randomly select a codon with weight proportional to 4-d where d is its Hamming distance to the original genome. 
   * Non-mutated regions: we don't mutate (1) the start/end codons, (2) intergenic regions (~5% of the genome), and (3) overlapping regions of the genes - when encounter a pair of genes that overlap each other (possibly with different reading frames), we don't mutate the overlapping region
