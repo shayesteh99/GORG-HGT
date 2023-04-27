@@ -1,7 +1,18 @@
-# GND_sim
-  * Used a gamma distribution (with an alpha parameter) to draw the relative rate for each gene. In our experiments, we used gamma = 22 which was learned from the real data. 
-  * Given a desired AAD level p and genome length L, randomly select nmus = p\*L amino acids (i.e. sampling without replacement) to mutate using the BLOSUM62 model; each amino acid is selected with a probability determined by the rate of the gene it belongs to. 
-  * Avoid adding/removing start/end codons: don't allow the start and end condons to mutate
-  * Avoid interrupting the reading frame: when encounter a pair of genes that overlap each other (possibly with different reading frames), don't mutate the overlapping region.
+This is the simulation procedure to evaluate the accuracy of GND and AAD estimates. 
+
+# Goal: 
+* Generate a set of mock genomes by introducing genomic changes only through point mutations (no genome rearrangements or HGT).  
+* Given a genome X, add mutations to it in the AA space and back-translated them to nucleotides to get a mock genome X'. Vary the parameters of the evolutionary model to get multiple mock genomes.
+
+# Evolutionary model and simulation procedure: to generate a mock genome X' that has AAD(X,X') = p, we do the following steps
+  * 1. use a gamma distribution (alpha = beta = 22) to draw the relative rate for each gene. 
+  * 2. sample without replacement nmus = p\*L amino acids in X, where L is the length of X. Each amino acid in X is selected with a probability determined by the rate of the gene it belongs to. Mutate these amino acids using the BLOSUM62 model to obtain X'.  
+  * 3. back translate X' from amino acids to nucleotides. 
+  * 4. vary p to create a set of X' with different distances to X.
+  
+# Side notes  
   * Back translation: when there are multiple codons for an amino acid, if there is a codon that is identical to the original genome, we choose it; otherwise, we randomly select a codon with weight proportional to 4-d where d is its Hamming distance to the original genome. 
-  * Intergenic regions (~5% of the genome): We don't mutate them.
+  * Non-mutated regions:
+    ** start/end codons 
+    ** overlapping regions of the genes: when encounter a pair of genes that overlap each other (possibly with different reading frames), we don't mutate the overlapping region.  
+    ** intergenic regions (~5% of the genome).
