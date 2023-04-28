@@ -1,6 +1,6 @@
 * [aad_distances.txt.xz](aad_distances.txt.xz): csv file (xz compressed) showing pairwise AAD between genomes
 
-* [aad_tree.nwk](aad_tree.nwk): Results of hierarchical single linkage cluster performed on AAD using [TreeN93](https://github.com/niemasd/TreeN93/tree/a4e2bfc8a0bd573d484165b7e99a53aa5eb443b9).
+* [aad_tree.nwk](aad_tree.nwk): Results of hierarchical single linkage cluster performed on AAD using [TreeN93](https://github.com/niemasd/TreeN93/tree/a4e2bfc8a0bd573d484165b7e99a53aa5eb443b9). The missing AAD pairs are set to 60 (i.e. a very high AAD distance).
   ~~~bash
   xz -d aad_distances.txt.xz
   TreeN93.py -i aad_distances.txt -o aad_tree.nwk -m 60
@@ -15,11 +15,11 @@
 * `RAxML.T16S-SINA-1000-bootcutoff_MVrooted_pruned`, 
   `RAxML.T23S-SINA-1000-bootcutoff_MVrooted_pruned`, 
   `aad_tree_pruned.nwk`, 
-  `astral_pruned.tre`: pruned version of trees above; Restrict the leafset of all trees (astral, S16, S23, aad_tree) and to their intersection
+  `astral_pruned.tre`: pruned version of trees above; restrict the leafset of all trees (astral, S16, S23, aad_tree) to their intersection
 
 * [aad_binning.py](aad_binning.py): the sampling strategy using the hierarchical single linkage clustering. Creates these files:
 
-  * [16s_sampledtrees.zip](16s_sampledtrees.zip): 16S tree subsampled to various ranges (e.g., `16SS_037_052.nwk`), ASTRAL restricted to the same leaves (`astral_037_052.nwk`), and mean pdistance of that subset (`pdist_037_052.txt`).
+  * [16s_sampledtrees.zip](16s_sampledtrees.zip): 16S tree subsampled to various ranges (e.g., `16SS_037_052.nwk`), ASTRAL restricted to the same leaves (`astral_037_052.nwk`), and mean pdistance (i.e. AAD distances) of that subset (`pdist_037_052.txt`).
 
 * [combined_data.txt](combined_data.txt): A file that contains:
   * mean pairwise AAD (`pdist`) for a subtree
