@@ -48,6 +48,52 @@ ggplot(aes(y=Mean.AAI,x=min,color=treedist+10^-5),
 ggsave("dminA_vs_dminG_all_new_selected2_log_closest3.pdf",width = 9,height=3.4)
 
 
+require(tidyverse)
+newd[newd$gene %in% c("dnaK" ) & newd$treedist < 1,] %>%
+  mutate(delta = Mean.AAI- min) %>%
+  ggplot(aes(x=delta))+geom_density()
+
+
+dnak = newd[newd$gene %in% c("dnaK" ) & newd$treedist < 1,] %>%
+  mutate(delta = log(Mean.AAI/min)) 
+
+ggplot(data=dnak,aes(x=delta))+geom_density(adjust = 2)+#coord_cartesian(xlim=c(0,0.02)) +
+  stat_function(fun=function(x) dgamma(x,shape=mean(dnak$delta)^2/var(dnak$delta),rate=mean(dnak$delta)/var(dnak$delta)),color="red") +
+  stat_function(fun=function(x) dexp(x,log(2)/median(dnak$delta)),color="blue")
+
+ggplot(aes(sample=delta),data=dnak)+
+  geom_qq_line(distribution = stats::qgamma,dparams = c(shape=mean(dnak$delta)^2/var(dnak$delta),rate=mean(dnak$delta)/var(dnak$delta)))+ 
+  stat_qq(distribution = stats::qgamma,dparams = c(shape=mean(dnak$delta)^2/var(dnak$delta),rate=mean(dnak$delta)/var(dnak$delta)))+
+  geom_vline(xintercept = qgamma(1-c(0.001,0.01,0.05),shape=mean(dnak$delta)^2/var(dnak$delta),rate=mean(dnak$delta)/var(dnak$delta)),
+             color="red")
+
+ggplot(aes(sample=delta),data=dnak)+
+  geom_qq_line(distribution = stats::qexp,dparams = c(rate=log(2)/median(dnak$delta)))+ 
+  stat_qq(distribution = stats::qexp,dparams = c(rate=log(2)/median(dnak$delta)))
+
+
+ggplot(aes(x=delta),data=dnak)+stat_ecdf()+
+  geom_vline(xintercept = qexp(1-c(0.001,0.01,0.05),rate=log(2)/median(dnak$delta)),color="red")+
+  stat_function(fun=function(x) pexp(x,log(2)/median(dnak$delta)),color="blue")
+  
+
+ggplot(aes(y=Mean.AAI,x=min,color=cut(delta,qexp(1-c(0,0.001,0.01,0.05,1),rate=log(2)/median(delta)))),data=dnak)+
+  geom_abline(color="grey20",size=0.5,linetype=1) +
+  #annotate("rect", xmin = 0, xmax = 0.01, ymin = 0.05, ymax =0.5, alpha = .1)+
+  geom_point(size=0.5)+
+  facet_wrap(~gene,nrow=1)+
+  theme_classic()+
+  theme(panel.spacing = unit(0,"pt"),legend.position="bottom")+
+  scale_y_continuous(name="AAD to the gene tree neighbor",labels=percent,trans="log10") + 
+  scale_x_continuous(name="AAD to the closest SAG",       labels=percent,trans="log10")+
+  theme(panel.spacing = unit(0,"pt"),
+        legend.position=c(.614,.16),
+        legend.direction = "horizontal",
+        panel.border = element_rect(fill="NA")) +
+  coord_cartesian(ylim=c(0.001,0.5),xlim=c(0.001,0.5))+
+  scale_colour_viridis_d(direction = -1,name="p-value")
+
+
 ggplot(aes(y=Mean.AAI,x=min,color=treedist+10^-5),
        data=newd[newd$gene %in% c("dnaK", "recA", "gyrA", "ychF" )
                  & newd$treedist < 1,])+
