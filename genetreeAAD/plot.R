@@ -49,13 +49,13 @@ ggsave("dminA_vs_dminG_all_new_selected2_log_closest3.pdf",width = 9,height=3.4)
 
 
 require(tidyverse)
-newd[newd$gene %in% c("dnaK" ) & newd$treedist < 1,] %>%
+newd[newd$gene %in% c("trxA" ) & newd$treedist < 1,] %>%
   mutate(delta = Mean.AAI- min) %>%
   ggplot(aes(x=delta))+geom_density()
 
 
-dnak = newd[newd$gene %in% c("dnaK" ) & newd$treedist < 1,] %>%
-  mutate(delta = log(Mean.AAI/min)) 
+dnak = newd[newd$gene %in% c("trxA" ) & newd$treedist < 1,] %>%
+  mutate(delta = (Mean.AAI-min)) 
 
 ggplot(data=dnak,aes(x=delta))+geom_density(adjust = 2)+#coord_cartesian(xlim=c(0,0.02)) +
   stat_function(fun=function(x) dgamma(x,shape=mean(dnak$delta)^2/var(dnak$delta),rate=mean(dnak$delta)/var(dnak$delta)),color="red") +
@@ -63,9 +63,7 @@ ggplot(data=dnak,aes(x=delta))+geom_density(adjust = 2)+#coord_cartesian(xlim=c(
 
 ggplot(aes(sample=delta),data=dnak)+
   geom_qq_line(distribution = stats::qgamma,dparams = c(shape=mean(dnak$delta)^2/var(dnak$delta),rate=mean(dnak$delta)/var(dnak$delta)))+ 
-  stat_qq(distribution = stats::qgamma,dparams = c(shape=mean(dnak$delta)^2/var(dnak$delta),rate=mean(dnak$delta)/var(dnak$delta)))+
-  geom_vline(xintercept = qgamma(1-c(0.001,0.01,0.05),shape=mean(dnak$delta)^2/var(dnak$delta),rate=mean(dnak$delta)/var(dnak$delta)),
-             color="red")
+  stat_qq(distribution = stats::qgamma,dparams = c(shape=mean(dnak$delta)^2/var(dnak$delta),rate=mean(dnak$delta)/var(dnak$delta)))
 
 ggplot(aes(sample=delta),data=dnak)+
   geom_qq_line(distribution = stats::qexp,dparams = c(rate=log(2)/median(dnak$delta)))+ 
