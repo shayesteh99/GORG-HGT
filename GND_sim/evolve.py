@@ -1,21 +1,18 @@
 #! /usr/bin/env python
-from statistics import mean
 
-from sequence_lib import read_fasta, write_fasta, p_distance
+from sequence_lib import read_fasta, write_fasta
 from random import *
 from numpy.random import gamma, binomial, choice
 import numpy as np
-import os
 import json
 
 def read_codon_table():
     codon = {}
-    with open("codon_table.txt", 'r') as fin:
+    with open("codon_table.txt",'r') as fin:
         for line in fin:
             code = line.strip().split()
             codon[code[0]] = code[1:]
     return codon
-
 
 def read_blosum62():
     M = {}
@@ -25,48 +22,35 @@ def read_blosum62():
             row = line.strip().split(",")
             a1 = row[0][1]
             M[a1] = {}
-            for a2, p in zip(aa[1:], row[1:]):
+            for a2,p in zip(aa[1:],row[1:]):
                 M[a1][a2] = float(p) if a2 != a1 else 0
     return M
 
-
 def normalize(v):
     s = sum(v)
-    return [x / s for x in v]
+    return [x/s for x in v]
 
-
-def randomize_rates(n_gene, alpha):
-    rates = gamma(alpha, 1 / alpha, n_gene)
-    #print("\nrates: ".join((str(r) for r in rates)))
+def randomize_rates(n_gene,alpha):    
+    rates = gamma(alpha,1/alpha,n_gene)
     return normalize(rates)
 
-
-def evolve(gseqs, g_weights, n_mus):
+def evolve(gseqs,g_weights,n_mus,M):
     # n_mus: number of mutations
-    dist = {}
+
     print("Computing population ...")
-    population = [(i, j) for i in range(len(gseqs)) for j in range(len(gseqs[i]))]
-    print(len(population))
+    population = [(i,j) for i in range(len(gseqs)) for j in range(len(gseqs[i]))]
 
     print("Computing weights ...")
     weights = normalize([g_weights[i][j] for i in range(len(g_weights)) for j in range(len(g_weights[i]))])
-    print("w:", sum(weights), n_mus, len(weights), len(set(weights)) )
 
     print("Choosing mutation sites ...")
-    mutated = choice(range(len(weights)), size=n_mus, replace=False, p=weights)
-    geneDs = [[] for i in range(len(gseqs))]
+    mutated = choice(range(len(weights)),size=n_mus,replace=False,p=weights)
+
     for k in mutated:
-        i, j = population[k]
-        geneDs[i].append(j)
-        seq = (gseqs[i]+ '.')[:-1]
-        codon = (seq[(j//3)*3:(j//3)*3+3]+ '.')[:-1]
-        new_codon = "TAA"
-        while new_codon in set(['TAA', 'TAG', 'TGA', 'ATG']):
-            c = choice(list(set(['A', 'C', 'G', 'T']) - set([seq[j]])))
-            new_codon = codon[0:j%3] + c + codon[j%3+1:3]
-        gseqs[i] = seq[:j] + c + seq[j + 1:]
-    #print("\nM: ".join(str(len(i)) for i in [[]]+geneDs))
-    return(geneDs)
+        i,j = population[k]
+        seq = gseqs[i]
+        c = choice(list(M[seq[j]].keys()),p=normalize(M[seq[j]].values()))
+        gseqs[i] = seq[:j] + c + seq[j+1:]
 
 def evolve2(seqs, g_weights, n_mus):
     # n_mus: number of mutations
@@ -91,8 +75,23 @@ def evolve2(seqs, g_weights, n_mus):
                   choice(list(set(['A', 'C', 'G', 'T']) - set([seq[j]]))) + \
                   seq[j + 1:]
 
+def extract_locations(gnames):
+# parse the gene names to extract the start and end points
+    g_locations = []    
+    #g_locations_adjusted = []
+    #i_locations = []
 
-def extract_locations(seqs, names, gnames):
+    for i,g in enumerate(gnames):
+        node,start,end,direction = g.strip().split("#")[:4]
+        node = "_".join(node.strip().split("_")[:-1])
+        start = int(start)-1
+        end = int(end)-1
+        rev = float(direction) < 0
+        g_locations.append((node,start,end,rev))
+    
+    return g_locations
+
+def extract_locations2(seqs, names, gnames):
     # parse the gene names to extract the start and end points
     g_locations = []
     # g_locations_adjusted = []
@@ -113,30 +112,62 @@ def extract_locations(seqs, names, gnames):
 
     return g_locations, gseqs
 
-
-def assign_weights(gseqs, g_locations, alpha):
-    # randomly assign a (relative) mutation rate for each gene
-    # the rate multipliers are drawn from a gamma distribution
-    # all the loci in each gene are assigned the rate multipliers
-    # of that gene as their weights; instead for the start and
-    # end codons and the overlapping regions between the genes
-    # are assigned weights 0 (i.e. not allowed to mutate)
-    # alpha control the variance of the rate (i.e. shape of the
-    # gamma distribution)
+def assign_weights(gseqs,g_locations,alpha):
+# randomly assign a (relative) mutation rate for each gene
+# the rate multipliers are drawn from a gamma distribution
+# all the loci in each gene are assigned the rate multipliers 
+# of that gene as their weights; instead for the start and 
+# end codons and the overlapping regions between the genes 
+# are assigned weights 0 (i.e. not allowed to mutate)
+# alpha control the variance of the rate (i.e. shape of the
+# gamma distribution) 
     n_genes = len(gseqs)
-    g_rates = randomize_rates(n_genes, alpha)
+    # print(n_genes)
+    g_rates = randomize_rates(n_genes,alpha)
     g_weights = []
-    prv_node, prv_start, prv_end = (None, None, None)
+    prv_node, prv_start, prv_end = (None,None,None)
 
-    for rate, (node, start, end, rev) in zip(g_rates, g_locations):
-        w = [0, 0, 0] + [rate] * (end - start + 1 - 6) + [0, 0, 0]
+    for seq,rate,(node,start,end,_) in zip(gseqs,g_rates,g_locations):
+        w = [rate]*len(seq)
         # weight 0 for start and end codons
-        g_weights.append(w)
-        #assert len(w) == len(seq)
-        # print(sum(g==0 for g in w))
-    #print(sum(sum(pw for pw in w) for w in g_weights) / sum(len(w) for w in g_weights))
-    return g_weights, [g / mean(g_rates) for g in g_rates]
+        w[0] = 0 
+        w[-1] = 0
+        # check for overlapping with previous genes
+        # here we assume that the genes are ordered
+        # and a gene can only overlap with at most
+        # one other gene
+        # print(prv_node, prv_start, prv_end)
+        if prv_node == node:
+            if prv_end > start:
+                prv_w = g_weights[-1]
+                # set zero-weights for prv_w
+                e = prv_end
+                i = -1
+                while e > start:
+                    prv_w[i] = 0
+                    e -= 3
+                    i -= 1
+                # set zero-weights for w    
+                s = start
+                i = 1
+                while s < prv_end:
+                    w[i] = 0
+                    s += 3
+                    i += 1                
+        # add w to g_weights
+        g_weights.append(w) 
 
+    # w = np.array(g_weights[0])
+    # print(w[w == 0])
+
+    all_pos = [len(g) for g in g_weights]
+    zero_pos = np.array([len(np.array(g)[np.array(g) == 0]) for g in g_weights])
+    # print(zero_pos[zero_pos != 2])
+
+    # print(sum(zero_pos), sum(all_pos))
+    # print(len(g_weights))  
+
+    return g_weights
 
 def assign_weights2(gseqs, g_locations, alpha, seqs, names, wfile):
     # randomly assign a (relative) mutation rate for each gene
@@ -182,18 +213,71 @@ def assign_weights2(gseqs, g_locations, alpha, seqs, names, wfile):
     # return g_weights, [g / mean(g_rates) for g in g_rates]
 
 def reverse_complement(seq):
-    # compute the DNA reverse complement
-    complement = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G'}
+# compute the DNA reverse complement
+    complement = {'A':'T','T':'A','G':'C','C':'G'}
     rseq = ''
     for x in seq[::-1]:
         rseq += complement[x]
     return rseq
 
-codons = read_codon_table()
-backcodon = dict()
-for p,ns in codons.items():
-    for n in ns:
-        backcodon[n] = p
+def back_translate(peptide,ref,rev):
+# back translation is not unique
+# here we do the following:
+# if a codon exactly matches the original, 
+# then use it. Otherwise, randomly choose a codon 
+# with the weight is the probability 
+# that the reference dna mutated into that codon 
+# eg: prob(ACT --> ACG) = 1/4*(3/4)**2; prob(ACT --> AAG) = (1/4)**2*(3/4)
+    if rev:
+        ref = reverse_complement(ref)
+    codon = read_codon_table()
+    dna = ''
+    for i,aa in enumerate(peptide):
+        ref_i = ref[3*i:3*i+3]
+        w_total = 0
+        translated = None
+        # print("="*200)
+        # print(ref_i)
+        for tr in codon[aa]:
+            d = sum(a != b for a,b in zip(tr,ref_i))
+            if d == 0:
+                translated = tr
+                break
+            #w = (0.25**d)*(0.75**(3-d))
+        if not translated:
+            for tr in codon[aa]:
+                d = sum(a != b for a,b in zip(tr,ref_i))
+                w = 4-d
+                w_total += w
+                if random() <= w/w_total: # choose this codon with probability w/w_total
+                    translated = tr
+                    break
+        if translated != ref_i:
+            pass
+            # print(translated, ref_i)
+            # print(sum(a != b for a,b in zip(translated,ref_i)))
+        # print("=" * 200)
+        dna += translated
+    D = sum(x!=y for x,y in zip(dna,ref))/len(dna)
+    if rev:
+        dna = reverse_complement(dna)
+    return dna,D 
+
+def stitch_back(names,seqs,g_locations,gseqs):
+    # hash genome names
+    genome = {}
+    for node,seq in zip(names,seqs):
+        genome[node] = seq
+
+    # stitch the genes to the genome
+    for gseq,(node,start,end,rev) in zip(gseqs,g_locations):
+        ref = genome[node][start:end+1]
+        dna,D = back_translate(gseq,genome[node][start:end+1],rev)
+        new_seq = genome[node][:start] + dna + genome[node][end+1:]
+        genome[node] = new_seq
+
+    return list(genome.keys()),list(genome.values())
+
 
 def translate(new_nt, rev):
     if rev:
@@ -234,77 +318,75 @@ def translate_all(names, seqs, g_locations, gnames, origs):
         new_aas.append(translate(genome[node][start:end + 1],rev))
     return list(genome.keys()), list(genome.values()), new_aas
 
-
-def stitch_back(names, seqs, g_locations, gseqs, g_weights, gnames, Ds):
-    # hash genome names
-    genome = {}
-    new_aas = []
-    for node, seq in zip(names, seqs):
-        genome[node] = seq
-
-    # stitch the genes to the genome
-    se = 0
-    ser = 0
-    serc = 0
-    ts = 0
-    gl = 0
-    for gseq, (node, start, end, rev), g_weight, gname, eD in zip(gseqs, g_locations, g_weights, gnames, Ds):
-        ref = genome[node][start:end + 1]
-        dna = reverse_complement(gseq) if rev else gseq
-        new_aas.append(translate(dna,rev))
-        D = sum(x != y for x, y in zip(dna, ref))
-        if D != len(eD):
-            print("*******", D, len(eD), node)
-            print(" -- ".join("%d %s,%s" %(i, x,y) for i, (x, y) in enumerate(zip(dna, ref)) if x != y ))
-            print("     ",", ".join(str(e) for e in sorted(eD)))
-            #if D<len(eD):
-            #    raise Exception("%d %d %s" %(D, eD, gname))
-        #print("D:", D)
-        if D / len(dna) <= 0.01:
-            se += 1
-        if 500 < end - start < 1500:
-            #print("gene:r", D, g_weight)
-            if D/ len(dna) <= 0.01:
-                ser += 1
-            serc += 1
-        ts += D
-        gl += len(dna)
-        new_seq = genome[node][:start] + dna + genome[node][end + 1:]
-        genome[node] = new_seq
-    print("sum:", se / len(gseqs), ser / serc, se, len(gseqs), ts, gl, ts / gl)
-    return list(genome.keys()), list(genome.values()), new_aas
-
+def compute_n_mus(n_sites,p,p_g=0.95):
+# n_sites is the number of DNA sites, while
+# n_mus is the number of aa mutations
+# p is the proportion of DNA mutations in the genome
+# p_g is the proportion of genes to the full genome
+    nt2aa = 1/2
+    return round(n_sites*p*nt2aa)
 
 from sys import argv
-from os import mkdir, getcwd, rmdir, listdir
+import os
+from os import mkdir,getcwd,rmdir,listdir
 
 p = float(argv[1]) # p is the proportion of aa mutations (i.e. 1-AAI)
 alpha = float(argv[2])
 # pair = argv[3]
 base_genome = argv[3]
+model = argv[4]
 
 base_dir = "simulated_genomes/" + base_genome
 
+M = read_blosum62()
 names,seqs = read_fasta(base_dir + "/" + base_genome +"_contigs.fasta") # full genome
 gnames,gseqs = read_fasta(base_dir + "/" + base_genome +"_contigs_genes.faa") # genes
-weight_file = base_dir + "/" + "g_weights_a" + str(int(alpha)) + ".npy"
 
-g_locations, gseqs = extract_locations(seqs, names, gnames)
-g_weights = assign_weights2(gseqs, g_locations, alpha, seqs, names, weight_file)
-#g_weights, g_rates = assign_weights(gseqs, g_locations, alpha)
+#n_sites = sum(len(s) for s in seqs) 
+#n_mus = compute_n_mus(n_sites,p)
+n_sites = sum(len(s) for s in gseqs) 
+n_mus = round(n_sites*p)
+print(p, n_mus)
 
-n_sites = sum(len(s) for s in gseqs)
-n_mus = round(n_sites * p)
-print(n_sites, n_mus)
+if model == 'codon':
+    g_locations = extract_locations(gnames)
+    g_weights = assign_weights(gseqs,g_locations,alpha)
+    evolve(gseqs,g_weights,n_mus,M)
+    mutated_names, mutated_seqs = stitch_back(names,seqs,g_locations,gseqs)
 
-#geneDs = evolve2(gseqs, g_weights, n_mus)
-orig = [str(s) for s in seqs]
-evolve2(seqs, g_weights, n_mus)
-mutated_names, mutated_seqs, new_aaseqs = translate_all(names, seqs, g_locations, gnames, orig)
+    if p < 1e-2:
+        outdir = base_dir + "/mutated_BLOSUM62_" + base_genome + "_a" + str(int(alpha)) + "_aad" + str(round(p*10000)).rjust(5,'0')
+    else:
+        outdir = base_dir + "/mutated_BLOSUM62_" + base_genome + "_a" + str(int(alpha)) + "_aad" + str(round(p*100)).rjust(3,'0')
+    if not os.path.isdir(outdir):
+        mkdir(outdir)
+    write_fasta(outdir+"/mutated_genes.faa",gnames,gseqs)
+    write_fasta(outdir+"/mutated.fasta",mutated_names,mutated_seqs)
 
-# outdir = base_dir + "/mutated_BLOSUM62_" + base_genome + "_a" + str(int(alpha)) + "_gnd" + str(round(p*10000)).rjust(5,'0')
-outdir = base_dir + "/mutated_BLOSUM62_" + base_genome + "_a" + str(int(alpha)) + "_gnd" + str(round(p*100)).rjust(3,'0')
-mkdir(outdir)
-write_fasta(outdir + "/mutated_genes.faa", gnames, new_aaseqs)
-write_fasta(outdir + "/mutated.fasta", mutated_names, mutated_seqs)
+elif model == 'nt':
+    weight_file = base_dir + "/" + "g_weights_a" + str(int(alpha)) + ".npy"
+
+    g_locations, gseqs = extract_locations2(seqs, names, gnames)
+    g_weights = assign_weights2(gseqs, g_locations, alpha, seqs, names, weight_file)
+    #g_weights, g_rates = assign_weights(gseqs, g_locations, alpha)
+
+
+    #geneDs = evolve2(gseqs, g_weights, n_mus)
+    codons = read_codon_table()
+    backcodon = dict()
+    for ps,ns in codons.items():
+        for n in ns:
+            backcodon[n] = ps
+    orig = [str(s) for s in seqs]
+    evolve2(seqs, g_weights, n_mus)
+    mutated_names, mutated_seqs, new_aaseqs = translate_all(names, seqs, g_locations, gnames, orig)
+
+    if p < 1e-2:
+        outdir = base_dir + "/mutated_BLOSUM62_" + base_genome + "_a" + str(int(alpha)) + "_gnd" + str(round(p*10000)).rjust(5,'0')
+    else:
+        outdir = base_dir + "/mutated_BLOSUM62_" + base_genome + "_a" + str(int(alpha)) + "_gnd" + str(round(p*100)).rjust(3,'0')
+    if not os.path.isdir(outdir):
+        mkdir(outdir)
+    write_fasta(outdir + "/mutated_genes.faa", gnames, new_aaseqs)
+    write_fasta(outdir + "/mutated.fasta", mutated_names, mutated_seqs)
 
