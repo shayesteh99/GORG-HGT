@@ -97,3 +97,83 @@ ggsave("dminA_vs_dminG_new_log_closest3.pdf",width = 14,height=15)
 #write.csv(
   with(gyrA,gyrA[Mean.AAI-min>.1 & min<0.05 & V3<0.01,c(1,2,3,11)])
   #,file="gyrA-examples.csv")
+  
+#Figure S7 a
+newdd = newd[newd$treedist < 1,] %>%
+    mutate(delta = (Mean.AAI-min))
+head(newdd)
+  
+ggplot(aes(x = delta), data = newdd[newdd$delta > 1e-10,]) +
+  geom_density(aes(color = "empirical density"), linetype = "solid", show.legend = TRUE, fill = "black", alpha = 0.2) + 
+  geom_density(aes(x = rexp(length(newdd[newdd$delta > 1e-10,]$delta), rate = log(2)/median(newdd$delta)), color = "exponential sample density"), linetype = "solid", show.legend = TRUE, fill = "black", alpha = 0) +
+  scale_color_manual(name = "distribution", values = c("empirical density" = "black", "exponential PDF" = "blue", "exponential sample density" = "orange")) +
+  scale_x_continuous(name = "measure of discrepancy") +
+  guides(color = guide_legend(override.aes = list(linetype = "solid", fill = NA))) +
+  ylab("probability density")+
+  theme(legend.position = "bottom")
+ggsave("delta_dist_all_genes_random.pdf",width = 5,height=3) 
+
+tmp <-merge(newdd[newdd$ gene %in% c("dnaK", "recA", "gyrA", "ychF" ) & newdd$delta > 0,],
+            newdd[newdd$ gene %in% c("dnaK", "recA", "gyrA", "ychF" ) & newdd$delta > 0,] %>%
+              group_by(gene) %>%
+              summarise(lam = log(2)/median(delta)))
+
+
+ggplot(tmp, aes(x=delta))+geom_density()+
+  geom_density(aes(color = "empirical density"), linetype = "solid", show.legend = TRUE, fill = "black", alpha = 0.2) +
+  geom_density(aes(x = rexp(length(delta), rate = median(lam)), color = "exponential sample density"), linetype = "solid", show.legend = TRUE, fill = "black", alpha = 0) +
+  facet_wrap(~gene)+
+  scale_color_manual(name = "distribution", values = c("empirical density" = "black", "exponential PDF" = "blue", "exponential sample density" = "orange")) +  # Create custom color scale
+  scale_x_continuous(name = "measure of discrepancy") +
+  guides(color = guide_legend(override.aes = list(linetype = "solid", fill = NA))) +
+  ylab("probability density")+
+  theme(legend.position = "bottom")
+ggsave("delta_dist_four_genes_random.pdf",width = 6,height=4)
+
+  
+#Figure S7 b
+all_hellinger_data <- read.csv("./hellinger_results.csv")
+head(all_hellinger_data)
+
+ggplot(aes(y = ratio, x = as.factor(p), color = dist), data = all_hellinger_data[all_hellinger_data$p != 0,]) +
+  scale_y_log10() +
+  geom_boxplot() +
+  theme_bw() +
+  scale_color_brewer(palette = "Dark2", name = "distribution", labels = c("exponential", "gamma", "log norm"))+
+  theme(legend.position = "bottom")+
+  xlab("removed threshold (p)")+
+  ylab("Hellinger distance ratio over random")
+
+ggsave("all_hellinger_ratio.pdf",width = 5,height=4)
+
+#Figure S4
+newd_pos <- newd[newd$delta > 1e-10,]
+rates <- newd_pos %>%
+  group_by(gene) %>% 
+  summarise(rate = log(2)/median(delta))
+head(rates)
+
+newd_out <- merge(newd_pos, rates)
+head(newd_out)
+
+newd_out$pval <- 1 - pexp(newd_out$delta, rate = newd_out$rate)
+newd_out$adj_pval <- p.adjust(newd_out$pval,method="BH")
+
+ggplot(aes(y=Mean.AAI,x=min,color=cut(adj_pval,c(0,0.001,0.01,0.05,1))),data=newd_out)+
+  geom_abline(color="grey20",size=0.5,linetype=1) +
+  #annotate("rect", xmin = 0, xmax = 0.01, ymin = 0.05, ymax =0.5, alpha = .1)+
+  geom_point(size=0.5)+
+  geom_point(size=0.5,color="grey70",data=newd[newd$delta<=0,])+
+  facet_wrap(~gene,nrow=12)+
+  theme_classic()+
+  theme(panel.spacing = unit(0,"pt"),legend.position="bottom")+
+  scale_y_continuous(name="AAD to the gene tree neighbor",labels=percent,trans="log10") + 
+  scale_x_continuous(name="AAD to the closest SAG",       labels=percent,trans="log10")+
+  theme(panel.spacing = unit(0,"pt"),
+        legend.position="bottom",
+        legend.direction = "horizontal",
+        panel.border = element_rect(fill="NA")) +
+  coord_cartesian(ylim=c(0.001,0.5),xlim=c(0.001,0.5))+
+  scale_colour_viridis_d(direction = 1,name="p-value")
+ggsave("all_genes_out.pdf",width = 10,height=10)
+

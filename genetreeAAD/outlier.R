@@ -106,14 +106,14 @@ ggplot(aes(x=hellinger, color = dist), data = all_helinger_res)+
 ggsave("delta_vs_exp_hellinger.pdf",width = 5,height=3)
   
 #Hellinger Results
-exp_0 <- newd_pos %>%
-  group_by(gene) %>%
-  summarise(result = list(hellinger_p_value_exp(delta, p = 0)))
-exp_0_res <- exp_0 %>%
-  unnest_wider(result, names_sep = "_") %>%
-  rename(pvalue = `result_1`, ratio = `result_2`)
-exp_0_res$p <- 0
-head(exp_0_res)
+# exp_0 <- newd_pos %>%
+#   group_by(gene) %>%
+#   summarise(result = list(hellinger_p_value_exp(delta, p = 0)))
+# exp_0_res <- exp_0 %>%
+#   unnest_wider(result, names_sep = "_") %>%
+#   rename(pvalue = `result_1`, ratio = `result_2`)
+# exp_0_res$p <- 0
+# head(exp_0_res)
 
 exp_0.05 <- newd_pos %>% 
   group_by(gene) %>% 
@@ -197,6 +197,9 @@ all_hellinger_data <- rbind(all_exp_hellinger, all_gamma_hellinger, all_lnorm_he
 head(all_hellinger_data)
 write.csv(all_hellinger_data, "./hellinger_results.csv")
 
+all_hellinger_data <- read.csv("./hellinger_results.csv")
+head(all_hellinger_data)
+
 ggplot(aes(y=pvalue, x = as.factor(p), color = dist), data = all_hellinger_data[all_hellinger_data$p != 0,])+
   scale_y_log10()+
   geom_boxplot()
@@ -238,7 +241,7 @@ outliers <- newd_out %>%
             out_0.05 = sum(adj_pval < 0.05, na.rm = TRUE))
 
 head(outliers)
-write.csv("num_outliers.csv")
+# write.csv("num_outliers.csv")
 outliers %>% summarise(mean = mean(out_0.05/total))
 kable(outliers, format = "html", caption = "Number of outliers") %>%
   kable_styling(full_width = FALSE)
@@ -262,7 +265,9 @@ ggsave("out_hist.pdf",width = 4,height=3)
 
 #draw outliers
 ggplot(aes(y=Mean.AAI,x=min,color=cut(adj_pval,c(0,0.001,0.01,0.05,0.1,1))),
-       data=newd_out[newd_out$gene %in% c("dnaK", "recA", "gyrA", "ychF"),])+
+       data=newd_out
+       [newd_out$gene %in% c("dnaK", "recA", "gyrA", "ychF"),]
+       )+
   #annotate("rect", xmin = 0, xmax = 0.01, ymin = 0.05, ymax =0.5, alpha = .1)+
   geom_point(size=0.5)+
   geom_point(size=0.5,color="grey70",data=newd[newd$delta<=0 & newd$gene %in% c("dnaK", "recA", "gyrA", "ychF"),])+
@@ -282,7 +287,7 @@ ggsave("main_genes_out.pdf",width = 6,height=5)
 # ggsave("main_genes_out.",width = 5,height=5)
 
 
-ggplot(aes(y=Mean.AAI,x=min,color=cut(adj_pval,c(0,0.001,0.01,0.05,0.1,1))),data=newd_out)+
+ggplot(aes(y=Mean.AAI,x=min,color=cut(adj_pval,c(0,0.001,0.01,0.05,1))),data=newd_out)+
   geom_abline(color="grey20",size=0.5,linetype=1) +
   #annotate("rect", xmin = 0, xmax = 0.01, ymin = 0.05, ymax =0.5, alpha = .1)+
   geom_point(size=0.5)+
