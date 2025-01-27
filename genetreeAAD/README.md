@@ -21,7 +21,7 @@
 
 * [plot.R](plot.R): code to plot the data above (Figures 2B and S1)
 
-* * [outlier.R](plot.R): code to plot Figure S7.
+* [outlier.R](plot.R): code to plot Figure S7.
 
 * [multiplicities.txt](multiplicities.txt): The multiplicity of species per gene family tree 
 
