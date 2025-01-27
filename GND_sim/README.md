@@ -27,7 +27,7 @@ The simulated genomes are stored in ```simulated_genomes``` folder.
   * Inside each folder, there are 3 files: (1) ```gnd_aad.txt``` - the GND and AAD distance of this mock genome to the reference genome. (2) ```mutated.fasta``` - the simulated mock genome in DNA, and (3) ```mutated_genes.faa``` - the simulated mock genome in amino acid.
 
 ### Simulation procedure
-To reproduce the data, run ```evolve_multi_level.sh```. This bash script will call ```evolve.py``` (with model = "nt") multiple times to sequentially simulate each of the 35 mock genomes.
+To reproduce the data, run ```evolve_multi_level.sh```. This bash script will call ```evolve.py``` (with model = "nt") multiple times to sequentially simulate 31 mock genomes for each base genome.
 
 ### Side notes  
   * Back translation: when there are multiple codons for an amino acid, if there is a codon that is identical to the original genome, we choose it; otherwise, we randomly select a codon with weight proportional to 4-d where d is its Hamming distance to the original genome. 
