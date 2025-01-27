@@ -19,7 +19,7 @@ The generation process of the nucleotide-based model is similar to the codon-bas
 We vary p to create a set of X' with different distances to X.
 
 ### Simulated data
-We selected 29 different base genomes, and for each base genome we simulated a set of 62 mock genomes from the reference genome. We used two different alpha values 5.28 and 22, with 31 GND values from 0 to 0.20. We used the nucleotide model for all simulations (model = "nt")
+We selected 29 different base genomes, and for each base genome we simulated a set of 31 mock genomes from the reference genome with different GNDs ranging from 0 to 0.20 with alpha=22 for the gamma distribution. We used the nucleotide model for all simulations (model = "nt")
 The simulated genomes are stored in ```simulated_genomes``` folder.
 <!--  * We simulated a set of 35 mock genomes mutated from AG-359-G18. 
   * The simulated genomes are stored in ```AG-359-G18_mutated_alpha0022.tar.gz```, which contains 35 folders: ```mutated_a22_aad*```. These folders contain the 35 simulated mock genomes that have AAD to AG-359-G18 varying from 0.01 to 0.69 (step size is 0.02).
@@ -27,7 +27,7 @@ The simulated genomes are stored in ```simulated_genomes``` folder.
   * Inside each folder, there are 3 files: (1) ```gnd_aad.txt``` - the GND and AAD distance of this mock genome to the reference genome. (2) ```mutated.fasta``` - the simulated mock genome in DNA, and (3) ```mutated_genes.faa``` - the simulated mock genome in amino acid.
 
 ### Simulation procedure
-To reproduce the data, run ```evolve_multi_level.sh```. This bash script will call ```evolve.py``` (with model = "nt") multiple times to sequentially simulate each of the 35 mock genomes.
+To reproduce the data, run ```evolve_multi_level.sh```. This bash script will call ```evolve.py``` (with model = "nt") multiple times to sequentially simulate 31 mock genomes for each base genome.
 
 ### Side notes  
   * Back translation: when there are multiple codons for an amino acid, if there is a codon that is identical to the original genome, we choose it; otherwise, we randomly select a codon with weight proportional to 4-d where d is its Hamming distance to the original genome. 
