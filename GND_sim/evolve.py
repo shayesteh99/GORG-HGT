@@ -333,10 +333,12 @@ from os import mkdir,getcwd,rmdir,listdir
 p = float(argv[1]) # p is the proportion of aa mutations (i.e. 1-AAI)
 alpha = float(argv[2])
 # pair = argv[3]
-base_genome = argv[3]
-model = argv[4]
-
-base_dir = "simulated_genomes/" + base_genome
+model = argv[3]
+base_genome = argv[4]
+if model == "codon":
+    base_dir = argv[5]
+elif model == "nt":
+    base_dir = "simulated_genomes/" + base_genome
 
 M = read_blosum62()
 names,seqs = read_fasta(base_dir + "/" + base_genome +"_contigs.fasta") # full genome
