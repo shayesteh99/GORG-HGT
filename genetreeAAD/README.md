@@ -19,9 +19,9 @@
   ~~~
 * minimum-AAD-per-gene.csv.xz: For each gene, it includes the minimum possible AAD to each leaf present in that gene tree *among all the genomes present in that gene tree*
 
-* [plot.R](plot.R): code to plot the data above (Figures 2B and S1)
+* [plot.R](plot.R): code to plot the data above (Figures 2B, S1, S4, and S7).
 
-* [outlier.R](plot.R): code to plot Figure S7.
+* [outlier.R](plot.R): code to reproduce [hellinger_results.csv](hellinger_results.csv).
 
 * [multiplicities.txt](multiplicities.txt): The multiplicity of species per gene family tree 
 

@@ -2,10 +2,11 @@ from sequence_lib import read_fasta, p_distance
 from sys import argv
 
 d=argv[1]
+base_genome=argv[2]
 
 # nt
 names_mutated,seqs_mutated = read_fasta(d+"/mutated.fasta")
-names_org,seqs_org = read_fasta("AG-359-G18_contigs.fasta")
+names_org,seqs_org = read_fasta(base_genome+"_contigs.fasta")
 
 genome_org = {}
 for name,seq in zip(names_org,seqs_org):
@@ -18,14 +19,15 @@ for name,seq in zip(names_mutated,seqs_mutated):
 mutated = 0
 for x in genome_org:
     m = p_distance(genome_org[x],genome_mu[x])
+    # print(m)
     mutated += m*len(genome_org[x])
 
 total = sum(len(s) for s in seqs_org)
 gnd = mutated/total
 
-# aa
+#aa
 names_mutated,seqs_mutated = read_fasta(d+"/mutated_genes.faa")
-names_org,seqs_org = read_fasta("AG-359-G18_contigs_genes.faa")
+names_org,seqs_org = read_fasta(base_genome+"_contigs_genes.faa")
 
 genome_org = {}
 for name,seq in zip(names_org,seqs_org):
@@ -38,6 +40,7 @@ for name,seq in zip(names_mutated,seqs_mutated):
 mutated = 0
 for x in genome_org:
     m = p_distance(genome_org[x],genome_mu[x])
+    # print(m)
     mutated += m*len(genome_org[x])
 
 total = sum(len(s) for s in seqs_org)
