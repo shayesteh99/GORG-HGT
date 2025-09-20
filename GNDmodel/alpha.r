@@ -73,7 +73,7 @@ ggplot(
   theme_bw()+
   stat_cor(aes(label = paste(..r.label.., sep = "~`,`~")), method = "pearson")+
   labs(x = "true", y = "estimated")
-ggsave("est_vs_true_box.png",width = 4,height = 4)
+# ggsave("est_vs_true_box.png",width = 4,height = 4)
 
 cob = sags[,c("id", "completeness","rep","gnd")]
 names(cob) <- c("SAG", "Genome_completeness_.","rep","gnd")
@@ -167,7 +167,8 @@ alphassimic
 p2= ggplot(aes(x=1/( (stdev_pident/100)/(1-mean_pident/100) )^2 ),
        data= bdrmi[ bdrmi$stdev_pident!=0 & bdrmi$mean_pident != 100& bdrmi $ mean_pident > 0 & 
                       !is.na(bdrmi$total_hits) & !is.na(bdrmi$mean_pident) &
-                      bdrmi$total_hits>4 ,] )+
+                      bdrmi$total_hits>4 &
+                      bdrmi$type %in% c("real", "simulated"),] )+
   geom_histogram(binwidth =0.5)+
   scale_x_continuous(name=expression(alpha),trans = "identity")+
   geom_vline(aes(xintercept = a),color="red",linetype=2,
@@ -192,8 +193,8 @@ ggplot(aes(x=1/( (stdev_pident/100)/(1-mean_pident/100) )^2 ),
 #ggsave("alpha-estimate.pdf",width=6.5,height = 3.8)
 
 ggarrange(p2, p1, ncol = 1, labels = c("a", "b"),heights = c(2/3,1))
-ggsave(paste("SupplementaryS",8,".pdf",sep=""),width=6.5,height = 8)
-ggsave(paste("SupplementaryS",8,".png",sep=""),width=6.5,height = 8)
+ggsave(paste("FigureS",3,".pdf",sep=""),width=6.5,height = 8)
+ggsave(paste("FigureS",3,".png",sep=""),width=6.5,height = 8)
 
 
 ###
@@ -261,34 +262,38 @@ ggplot(aes(y=  adjusted ,
   theme_bw()+
   theme(legend.position = c(.8,.7),panel.grid.minor = element_blank())+
   coord_cartesian(xlim = c(0,0.27))
-ggsave("Figre1B.pdf",width=6.5,height = 4.5)
+ggsave("Figure1B.pdf",width=6.5,height = 4.5)
+ggsave("Figure1B.png",width=6.5,height = 4.5)
 
 ggplot(aes(y=  adjusted ,
            color="Data", x=1-mean_pident/100),
-       data=bdrmim[bdrmim$similarity=="X99",])+
+       data=bdrmim[bdrmim$similarity=="X99"
+                   & bdrmim$type != "real"
+                   ,])+
   geom_point(alpha=0.5,size=0.5)+ #geom_smooth(se=F,aes(color="Data (fit)"),size=1)+
   geom_line(aes(y=`.`,color="Data (mean)",x=as.numeric(as.character(gndbin))/100),
             data=dcast(gndbin+variable+type~.,
-                       data=bdrmim[bdrmim$similarity=="X99",
+                       data=bdrmim[bdrmim$similarity=="X99" & bdrmim$type != "real",
                                    c("gndbin","variable","type", "adjusted")],
                        fun.aggregate = mean),
             size=1)+
   geom_ribbon(aes(ymin=Low, y=Med, ymax=Hi,x=GND/100,color="Model (80% CI alpha)"),
-              data=dcast(GND+type~alpha,data=model[,c("GND", "X99","type", "alpha")],value.var = "X99"), 
+              data=dcast(GND+type~alpha,data=model[model$type != "real",c("GND", "X99","type", "alpha")],value.var = "X99"), 
               size=0.2,alpha=0.3,fill="#EE60BB",show.legend = F)+
   geom_line(aes(y=Med,x=GND/100, color="Model (median alpha)"),
-            data=dcast(GND+type~alpha,data=model[,c("GND", "X99","type", "alpha")],value.var = "X99"),
+            data=dcast(GND+type~alpha,data=model[model$type != "real",c("GND", "X99","type", "alpha")],value.var = "X99"),
             size=1,alpha=0.8)+
   scale_x_continuous(name="GND",labels=percent)+
   scale_linetype_manual(name=expression(alpha),values=c(3,1,2))+
   scale_color_manual(name="",values = c("gray50","#1055EE","#FF60AA","#BB3333","#770010"))+
   scale_y_continuous(name="Shared genes (adjusted for incompleteness)",labels=percent,breaks=c(0,0.2,0.4,0.6,0.8,1))+
-  theme_bw()+
+  theme_classic()+
   facet_wrap(.~type)+
-  theme(legend.position = c(.8,.2),panel.grid.minor = element_blank())+
+  theme(legend.position = c(.85,.4),panel.grid.minor = element_blank())+
   coord_cartesian(xlim = c(0,0.27))
-ggsave("FigureS1.pdf",width=8,height = 8)
-# Figure S1, panel a
+ggsave("FigureS5A.png",width=10,height = 4, dpi = 400)
+ggsave("FigureS5A.pdf",width=10,height = 4)
+# Figure S5, panel A
 
 # !(is.na(bdrmani_aln_coverage_ab) |  is.na(ani_aln_coverage_ba) |(ani_aln_coverage_ab<0.03 | ani_aln_coverage_ba<0.03))
 ggplot(aes(y=  adjusted ,
@@ -347,8 +352,8 @@ ggplot(aes(y=data-model,x=GND/100,color=as.factor(100-as.numeric(sub("X","",vari
   geom_hline(yintercept = 0,color="grey")+
   theme(legend.position = c(.8,.85))
 ggsave("Figure1C.pdf",width=6,height = 4)
-# ggsave("Figure1C.pdf",width=6,height = 4)
-# Figure 1
+ggsave("Figure1C.png",width=6,height = 4)
+# Figure 1C
 
 
 
@@ -363,18 +368,21 @@ ds=melt(ds,measure.vars = 4:6,variable.name = "alpha",value.name = "model")
 write.csv(x = ds,file="model-emp-all-highres.csv",row.names = F)
 
 ggplot(aes(y=data-model,x=GND/100,color=as.factor(100-as.numeric(sub("X","",variable)))),
-       data=ds[ds$alpha == "Med" & ds$variable %in% c("X99","X98.5","X98"),])+
+       data=ds[ds$alpha == "Med" & ds$variable %in% c("X99","X98.5","X98")
+               & ds$type != "real"
+               ,])+
   geom_line(size=0.8)+
   scale_color_manual(name="Gene ND threshold",values=c("red","#009900","blue"))+
   scale_x_continuous(lim=c(0,0.13),labels = function(x) x*100,breaks = (0:13)/100,"Genomic nucleotid difference, %")+
   #facet_wrap(~alpha,labeller = label_both,nrow=2)+
   theme_classic()+
   geom_hline(yintercept = 0,color="grey")+
-  theme(legend.position = c(.8,.85))+
-  facet_wrap(~type)
+  theme(legend.position = c(.9,.75))+
+  facet_wrap(~type)+
+  coord_cartesian(ylim = c(-0.15,0.25))
 
-ggsave("S1b.png",width=8,height = 8)
-ggsave("S1b.pdf",width=8,height = 8)
-#Figure S1. 
+ggsave("FigureS5B.png",width=10,height = 4)
+ggsave("FigureS5B.pdf",width=10,height = 4)
+#Figure S5 panel B. 
 
 
